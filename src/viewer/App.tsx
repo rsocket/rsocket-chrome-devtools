@@ -5,7 +5,16 @@ import classNames from 'classnames';
 import './App.scss';
 import {ObjectInspector} from 'react-inspector';
 import {Frame} from 'rsocket-types';
-import {deserializeFrame, deserializeFrameWithLength, FLAGS, FRAME_TYPES, printFrame, Utf8Encoders} from "rsocket-core";
+import {
+  BufferEncoders,
+  deserializeFrame,
+  deserializeFrameWithLength,
+  FLAGS,
+  FRAME_TYPES,
+  printFrame,
+  Utf8Encoders
+} from "rsocket-core";
+import {Encoders} from "rsocket-core/RSocketEncoding";
 
 function getRSocketType(type) {
   for (const [name, code] of Object.entries(FRAME_TYPES)) {
@@ -59,8 +68,8 @@ function base64ToArrayBuffer(base64: string) {
   return bytes;
 }
 
-const FrameEntry = ({frame, selected, onClick}: {frame: WsFrame, selected: boolean, onClick: MouseEventHandler}) => {
-  const rsocketFrame = tryDecodeFrame(frame.payload)
+const FrameEntry = ({frame, selected, onClick}: { frame: WsFrame, selected: boolean, onClick: MouseEventHandler }) => {
+  const rsocketFrame = tryDeserializeFrame(frame.payload)
   const frameName = rsocketFrame
     ? <span className="name">{shortFrame(rsocketFrame)}</span>
     : <span className="name">{frame.text != null ? "Text Frame" : "Binary Frame"}</span>
@@ -120,10 +129,14 @@ class RSocketFrame extends React.Component<RSocketFrameProps, any> {
       jsonMeta = undefined;
     }
     const dataField = jsonData
-      ? <div><hr/>Data<br/><ObjectInspector data={jsonData}/></div>
+      ? <div>
+        <hr/>
+        Data<br/><ObjectInspector data={jsonData}/></div>
       : <div/>
     const jsonField = jsonMeta
-      ? <div><hr/>Metadata<br/><ObjectInspector data={jsonMeta}/></div>
+      ? <div>
+        <hr/>
+        Metadata<br/><ObjectInspector data={jsonMeta}/></div>
       : <div/>
     return (
       <div>
@@ -180,17 +193,45 @@ const TextViewer = ({data}) => (
   </div>
 );
 
-function tryDecodeFrame(data: string): Frame | undefined {
+// Could
+let cachedEncoders: Encoders<any> = Utf8Encoders
+let cachedLengthPrefixedFrames: boolean = false;
+
+function tryDeserializeFrameWith(data: string, buffer: Buffer, lengthPrefixedFrames, encoders: Encoders<any>) {
   try {
-    let lengthPrefixedFrames = false;
-    const buffer = base64ToArrayBuffer(data);
     return lengthPrefixedFrames
-      ? deserializeFrameWithLength(buffer, Utf8Encoders)
-      : deserializeFrame(buffer, Utf8Encoders);
+      ? deserializeFrameWithLength(buffer, encoders)
+      : deserializeFrame(buffer, encoders);
   } catch (e) {
     // console.error("failed to decode frame", e)
     return undefined;
   }
+}
+
+function tryDeserializeFrame(data: string): Frame | undefined {
+  const buffer = base64ToArrayBuffer(data)
+  let frame: Frame | undefined;
+  // fast path
+  frame = tryDeserializeFrameWith(data, buffer, cachedLengthPrefixedFrames, cachedEncoders);
+  if (frame) {
+    return frame;
+  }
+  // slow path
+  let attempts: [Encoders<any>, boolean][] = [
+    [Utf8Encoders, false],
+    [Utf8Encoders, true],
+    [BufferEncoders, false],
+    [BufferEncoders, true],
+  ];
+  for (let [encoders, lengthPrefixedFrames] of attempts) {
+    frame = tryDeserializeFrameWith(data, buffer, lengthPrefixedFrames, encoders);
+    if (frame) {
+      cachedEncoders = encoders;
+      cachedLengthPrefixedFrames = lengthPrefixedFrames;
+      return frame;
+    }
+  }
+  return undefined;
 }
 
 const RSocketViewer = ({frame, data}) => {
@@ -219,10 +260,12 @@ class FrameView extends React.Component<{ wsFrame: WsFrame }, { panel?: string }
 
   render() {
     const {wsFrame} = this.props;
-    const rsocketFrame = tryDecodeFrame(wsFrame.payload)
+    const rsocketFrame = tryDeserializeFrame(wsFrame.payload)
     const panel = rsocketFrame
       ? <RSocketViewer frame={rsocketFrame} data={wsFrame.payload}/>
-      : <TextViewer data={wsFrame.text}/>;
+      : wsFrame.text
+          ? <TextViewer data={wsFrame.text}/>
+          : <TextViewer data={wsFrame.binary}/>;
     return (
       <div className="FrameView">
         {panel}
