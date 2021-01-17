@@ -1,0 +1,211 @@
+.App {
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  font-size: 12px;
+  color: #222;
+  overflow: hidden;
+}
+.LeftPanel {
+  border-right: 1px solid #ccc;
+  display: flex;
+  flex-direction: column;
+  cursor: default;
+  .list-controls {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: row;
+    background-color: #f8f8f8;
+    border-bottom: 1px solid #ddd;
+    padding: 8px 8px 4px 8px;
+    .list-filter {
+      flex: 1;
+      border: 1px solid #eee;
+      border-radius: 4px;
+      padding: 2px 4px;
+      margin: -2px 0 -2px 0;
+      position: relative;
+      top: -1px;
+      &::placeholder {
+        color: #aaa;
+      }
+    }
+    .list-button {
+      flex-shrink: 0;
+      font-size: 18px;
+      color: #888;
+      cursor: pointer;
+      margin-right: 8px;
+      &:hover {
+        color: #222;
+      }
+    }
+  }
+  .frame-list {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0;
+
+    .frame {
+      white-space: nowrap;
+      padding: 0 4px;
+      border-bottom: 1px solid #ccc;
+      display: flex;
+      flex-direction: row;
+      .fa {
+        flex-shrink: 0;
+        margin-top: 3px;
+      }
+      &.frame-incoming {
+        background-color: rgb(255, 230, 202);
+        .fa {
+          color: rgb(168, 104, 19);
+        }
+      }
+      &.frame-outgoing {
+        background-color: rgb(246, 255, 208);
+        .fa {
+          color: rgb(98, 168, 19);
+        }
+      }
+      .timestamp {
+        margin: 0 6px 0 2px;
+        color: #888;
+        flex-shrink: 0;
+      }
+      .name {
+        flex: 1 1;
+        min-width: 0;
+        text-overflow: ellipsis;
+        overflow: hidden;
+      }
+      .length {
+        flex-shrink: 0;
+        color: #aaa;
+      }
+      &.frame-selected {
+        background-color: rgb(42, 159, 255);
+        &.frame-incoming {
+          &, .fa { color: rgb(255, 230, 202); }
+        }
+        &.frame-outgoing {
+          &, .fa { color: rgb(246, 255, 208); }
+        }
+        .timestamp {
+          color: #ccc;
+        }
+        .length {
+          color: #888;
+        }
+      }
+    }
+  }
+}
+.PanelView {
+  .message {
+    display: block;
+    font-style: italic;
+    color: 888;
+    margin: 8px;
+  }
+}
+.FrameView {
+  position: absolute;
+  left: 0; top: 0; right: 0; bottom: 0;
+  display: flex;
+  flex-direction: column;
+  .tab-line {
+    flex-shrink: 0;
+    background-color: #eee;
+    border-bottom: 1px solid #ddd;
+    font-size: 16px;
+    padding: 4px 8px 0 8px;
+    .tab-button {
+      cursor: pointer;
+      background-color: #f8f8f8;
+      display: inline-block;
+      padding: 2px 12px;
+      margin: 0 4px;
+      border: 1px solid #ddd;
+      margin-bottom: -1px;
+      border-top-left-radius: 6px;
+      border-top-right-radius: 6px;
+      &.active {
+        background-color: #fff;
+        border-bottom-color: #fff;
+      }
+    }
+  }
+  .tab-pane {
+    flex: 1;
+    padding: 12px;
+    overflow: auto;
+  }
+  .object-comment {
+    color: #008000;
+  }
+  .error {
+    background-color: rgb(255, 240, 240);
+    border-top: 1px solid rgb(255, 214, 214);
+    border-bottom: 1px solid rgb(255, 214, 214);
+    color: #f00;
+    margin: 0 -12px;
+    padding: 4px 12px;
+    white-space: nowrap;
+    .fa {
+      display: inline-block;
+      vertical-align: top;
+      margin-right: 6px;
+      margin-top: 1px;
+    }
+    .error-message {
+      display: inline-block;
+      font-family: monospace;
+      white-space: pre;
+    }
+  }
+  .TextViewer {
+    white-space: pre;
+    font-family: monospace;
+  }
+}
+.RSocketFrame {
+  font-family: 'Consolas', 'Courier', monospace;
+  font-size: 16px;
+  white-space: nowrap;
+  ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    display: inline-block;
+  }
+  .line-numbers {
+    color: #888;
+    margin-right: 8px;
+  }
+  .selected {
+    background-color: #ccc;
+  }
+  .hex-view {
+    white-space: pre;
+    .padding {
+      user-select: none;
+    }
+    span {
+      margin: 0 3px;
+    }
+    span:nth-child(4) {
+      margin-right: 6px;
+    }
+    span:nth-child(8) {
+      margin-right: 10px;
+    }
+    span:nth-child(12) {
+      margin-right: 6px;
+    }
+  }
+  .ascii-view {
+    color: #444;
+    margin-left: 12px;
+  }
+}
+

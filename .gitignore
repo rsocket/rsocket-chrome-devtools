@@ -1,0 +1,12 @@
+.idea/
+
+node_modules/
+
+yarn-error.json
+.yarn/*
+!.yarn/releases
+!.yarn/plugins
+!.yarn/sdks
+!.yarn/versions
+
+dist/
