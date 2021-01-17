@@ -1,7 +1,8 @@
+# IntelliJ
 .idea/
 
+# Package management
 node_modules/
-
 yarn-error.json
 .yarn/*
 !.yarn/releases
@@ -9,4 +10,8 @@ yarn-error.json
 !.yarn/sdks
 !.yarn/versions
 
+# Build
 dist/
+
+# MacOS
+.DS_Store
