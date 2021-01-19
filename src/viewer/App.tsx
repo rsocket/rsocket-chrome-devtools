@@ -1,4 +1,5 @@
 import React, {MouseEventHandler} from 'react';
+// @ts-ignore no types for the package
 import Panel from 'react-flex-panel';
 import FontAwesome from 'react-fontawesome';
 import classNames from 'classnames';
@@ -16,7 +17,7 @@ import {
 } from "rsocket-core";
 import {Encoders} from "rsocket-core/RSocketEncoding";
 
-function getRSocketType(type) {
+function getRSocketType(type: number): string {
   for (const [name, code] of Object.entries(FRAME_TYPES)) {
     if (code === type) {
       return name;
@@ -25,7 +26,7 @@ function getRSocketType(type) {
   return toHex(type);
 }
 
-function toHex(n) {
+function toHex(n: number): string {
   return '0x' + n.toString(16);
 }
 
@@ -33,6 +34,7 @@ function shortFrame(frame: Frame) {
   const name = getRSocketType(frame.type);
   const flags: string[] = [];
   for (const [name, flag] of Object.entries(FLAGS)) {
+    // noinspection JSBitwiseOperatorUsage
     if (frame.flags & flag) {
       flags.push(name);
     }
@@ -40,17 +42,17 @@ function shortFrame(frame: Frame) {
   return `${name} [${flags.join(", ")}]`;
 }
 
-const padded = (num, d) => num.toFixed(0).padStart(d, '0');
+const padded = (num: number, d: number) => num.toFixed(0).padStart(d, '0');
 
-const stringToBuffer = str => {
+function stringToBuffer(str: string) {
   const ui8 = new Uint8Array(str.length);
   for (let i = 0; i < str.length; ++i) {
     ui8[i] = str.charCodeAt(i);
   }
   return ui8;
-};
+}
 
-const TimeStamp = ({time}) => {
+const TimeStamp = ({time}: { time: Date }) => {
   const h = time.getHours();
   const m = time.getMinutes();
   const s = time.getSeconds();
@@ -92,8 +94,8 @@ interface RSocketFrameProps {
 }
 
 class RSocketFrame extends React.Component<RSocketFrameProps, any> {
-  private hexView: HTMLUListElement;
-  private asciiView: HTMLUListElement;
+  private hexView: HTMLUListElement | null = null;
+  private asciiView: HTMLUListElement | null = null;
 
   render() {
     const {frame, data, className, ...props} = this.props;
@@ -107,7 +109,7 @@ class RSocketFrame extends React.Component<RSocketFrameProps, any> {
       const row = [...(data as any).subarray(pos, pos + 16)];
       lineNumbers.push(<li key={pos}>{pos.toString(16).padStart(numDigits, '0')}:</li>);
       hexView.push(<li key={pos}>
-        {row.map((byte, i) => <span key={i}>{byte.toString(16).padStart(2, '0')}</span>)}
+        {row.map((byte: number, i) => <span key={i}>{byte.toString(16).padStart(2, '0')}</span>)}
         {row.length < 16 && [...Array(16 - row.length)].map((nil, i) => <span key={i}
                                                                               className="padding">{"  "}</span>)}
       </li>);
@@ -172,7 +174,7 @@ class FrameList extends React.Component<any, any> {
           <FontAwesome className="list-button" name="stop" onClick={onStop} title="Stop"/>
         </div>
         <ul className="frame-list" onClick={() => onSelect(null)}>
-          {frames.map(frame =>
+          {frames.map((frame: WsFrame) =>
             <FrameEntry key={frame.id}
                         frame={frame}
                         selected={frame.id === activeId}
@@ -187,7 +189,7 @@ class FrameList extends React.Component<any, any> {
   }
 }
 
-const TextViewer = ({data}) => (
+const TextViewer = ({data}: { data: string | Uint8Array }) => (
   <div className="TextViewer tab-pane">
     {data}
   </div>
@@ -197,7 +199,7 @@ const TextViewer = ({data}) => (
 let cachedEncoders: Encoders<any> = Utf8Encoders
 let cachedLengthPrefixedFrames: boolean = false;
 
-function tryDeserializeFrameWith(data: string, buffer: Buffer, lengthPrefixedFrames, encoders: Encoders<any>) {
+function tryDeserializeFrameWith(data: string, buffer: Buffer, lengthPrefixedFrames: boolean, encoders: Encoders<any>) {
   try {
     return lengthPrefixedFrames
       ? deserializeFrameWithLength(buffer, encoders)
@@ -234,7 +236,7 @@ function tryDeserializeFrame(data: string): Frame | undefined {
   return undefined;
 }
 
-const RSocketViewer = ({frame, data}) => {
+const RSocketViewer = ({frame, data}: { frame: Frame, data: string }) => {
   try {
     return (
       <div className="TextViewer tab-pane">
@@ -255,7 +257,7 @@ const RSocketViewer = ({frame, data}) => {
 class FrameView extends React.Component<{ wsFrame: WsFrame }, { panel?: string }> {
   constructor(props: { wsFrame: WsFrame }) {
     super(props);
-    this.state = {panel: null};
+    this.state = {panel: undefined};
   }
 
   render() {
@@ -264,8 +266,8 @@ class FrameView extends React.Component<{ wsFrame: WsFrame }, { panel?: string }
     const panel = rsocketFrame
       ? <RSocketViewer frame={rsocketFrame} data={wsFrame.payload}/>
       : wsFrame.text
-          ? <TextViewer data={wsFrame.text}/>
-          : <TextViewer data={wsFrame.binary}/>;
+        ? <TextViewer data={wsFrame.text}/>
+        : <TextViewer data={wsFrame.binary!}/>;
     return (
       <div className="FrameView">
         {panel}
@@ -302,29 +304,31 @@ interface WebSocketFrame {
 interface AppState {
   frames: WsFrame[];
   capturing: boolean;
-  activeId: null
+  activeId?: number
 }
 
-export default class App extends React.Component<any, AppState> {
+export type ChromeHandlers = { [name: string]: any };
+
+export default class App extends React.Component<{ handlers: ChromeHandlers, }, AppState> {
   _uniqueId = 0;
-  issueTime = null;
-  issueWallTime = null;
+  issueTime?: number = undefined;
+  issueWallTime?: number = undefined;
 
   state: AppState = {
     frames: [],
-    activeId: null,
+    activeId: undefined,
     capturing: true,
   }
 
-  getTime(timestamp): Date {
-    if (this.issueTime == null) {
+  getTime(timestamp: number): Date {
+    if (this.issueTime === undefined || this.issueWallTime === undefined) {
       this.issueTime = timestamp;
       this.issueWallTime = new Date().getTime();
     }
     return new Date((timestamp - this.issueTime) * 1000 + this.issueWallTime);
   }
 
-  constructor(props) {
+  constructor(props: { handlers: ChromeHandlers, }) {
     super(props);
 
     props.handlers["Network.webSocketFrameReceived"] = this.frameReceived.bind(this);
@@ -355,7 +359,7 @@ export default class App extends React.Component<any, AppState> {
     );
   }
 
-  selectFrame = id => {
+  selectFrame = (id: number) => {
     this.setState({activeId: id});
   };
 
@@ -371,7 +375,7 @@ export default class App extends React.Component<any, AppState> {
     this.setState({capturing: false});
   }
 
-  addFrame(type, timestamp, response: WebSocketFrame) {
+  addFrame(type: 'incoming' | 'outgoing', timestamp: number, response: WebSocketFrame) {
     if (response.opcode === 1 || response.opcode === 2) {
       const frame: WsFrame = {
         type,
@@ -389,15 +393,15 @@ export default class App extends React.Component<any, AppState> {
     }
   }
 
-  frameReceived({timestamp, response}: { timestamp: any, response: WebSocketFrame }) {
-    if (this.state.capturing === true) {
-      this.addFrame("incoming", timestamp, response);
+  frameReceived({timestamp, response}: { timestamp: number, response: WebSocketFrame }) {
+    if (this.state.capturing) {
+      this.addFrame('incoming', timestamp, response);
     }
   }
 
-  frameSent({timestamp, response}: { timestamp: any, response: WebSocketFrame }) {
-    if (this.state.capturing === true) {
-      this.addFrame("outgoing", timestamp, response);
+  frameSent({timestamp, response}: { timestamp: number, response: WebSocketFrame }) {
+    if (this.state.capturing) {
+      this.addFrame('outgoing', timestamp, response);
     }
   }
 }

@@ -3,7 +3,7 @@
 
 # Package management
 node_modules/
-yarn-error.json
+yarn-error.log
 .yarn/*
 !.yarn/releases
 !.yarn/plugins

@@ -1,9 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './reset.css';
-import App from './viewer/App';
+import App, {ChromeHandlers} from './viewer/App';
 
-const handlers = {};
+const handlers: ChromeHandlers = {};
 
 declare let window: any;
 if (!window.inspectors) {
@@ -49,7 +49,7 @@ if (inspector && inspector.active) {
 }
 
 function startDebugging() {
-  chrome.debugger.sendCommand({tabId}, "Network.enable", null, () => {
+  chrome.debugger.sendCommand({tabId}, "Network.enable", undefined, () => {
     if (chrome.runtime.lastError) {
       console.error(chrome.runtime.lastError.message);
     } else {
