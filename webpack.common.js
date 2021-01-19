@@ -1,5 +1,5 @@
 const path = require("path");
-const CleanWebpackPlugin = require("clean-webpack-plugin");
+const {CleanWebpackPlugin} = require('clean-webpack-plugin');
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 
@@ -26,15 +26,9 @@ module.exports = {
         exclude: /node_modules/,
         test: /\.scss$/,
         use: [
-          {
-            loader: "style-loader" // Creates style nodes from JS strings
-          },
-          {
-            loader: "css-loader" // Translates CSS into CommonJS
-          },
-          {
-            loader: "sass-loader" // Compiles Sass to CSS
-          }
+          {loader: "style-loader"},
+          {loader: "css-loader"},
+          {loader: "sass-loader"},
         ]
       },
       {
@@ -62,22 +56,24 @@ module.exports = {
     ]
   },
   plugins: [
-    // // expose and write the allowed env vars on the compiled bundle
-    // new webpack.DefinePlugin({
-    //     "process.env.NODE_ENV": JSON.stringify(env.NODE_ENV)
-    // }),
-    new CleanWebpackPlugin("dist"),
-    new CopyWebpackPlugin([{
-      from: "src/manifest.json",
-      transform: function (content, path) {
-        // generates the manifest file using the package.json informations
-        return Buffer.from(JSON.stringify({
-          description: process.env.npm_package_description,
-          version: process.env.npm_package_version,
-          ...JSON.parse(content.toString())
-        }));
-      }
-    }]),
+    new CleanWebpackPlugin({
+      dir: "dist"
+    }),
+    new CopyWebpackPlugin({
+      patterns: [
+        {
+          from: "src/manifest.json",
+          transform: function (content, path) {
+            // generates the manifest file using the package.json informations
+            return Buffer.from(JSON.stringify({
+              description: process.env.npm_package_description,
+              version: process.env.npm_package_version,
+              ...JSON.parse(content.toString())
+            }));
+          }
+        }
+      ]
+    }),
     new HtmlWebpackPlugin({
       template: path.join(__dirname, "src/inspector.html"),
       filename: "inspector.html",
@@ -88,7 +84,6 @@ module.exports = {
       filename: "devtools.html",
       chunks: ["devtools"]
     })
-    // ,new WriteFilePlugin()
   ],
   resolve: {
     extensions: [".ts", ".tsx", ".js"]
