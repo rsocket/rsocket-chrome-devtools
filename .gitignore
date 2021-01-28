@@ -12,6 +12,7 @@ yarn-error.log
 
 # Build
 dist/
+dist.zip
 
 # MacOS
 .DS_Store

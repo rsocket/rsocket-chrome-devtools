@@ -3,7 +3,9 @@
   "version": "0.0.1",
   "description": "RSocket Chrome Devtools",
   "scripts": {
+    "clean": "rm -rf dist && rm -f dist.zip",
     "build": "webpack --config webpack.prod.js",
+    "dist": "yarn clean && yarn build && zip -r dist.zip dist",
     "dev": "webpack -w --config webpack.dev.js"
   },
   "author": "Sergey Tselovalnikov",
