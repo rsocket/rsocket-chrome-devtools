@@ -61,11 +61,18 @@ const TimeStamp = ({time}: { time: Date }) => {
 };
 
 function base64ToArrayBuffer(base64: string) {
-  const binary_string = window.atob(base64);
-  const len = binary_string.length;
+  let binaryString: string;
+  try {
+    binaryString = window.atob(base64);
+  } catch (e) {
+    // TODO: the main reason for such an error is that currently there is no support for multiple websocket connections,
+    //   e.g. webpack hot reloaders.
+    binaryString = "";
+  }
+  const len = binaryString.length;
   const bytes = new Buffer(len);
   for (let i = 0; i < len; i++) {
-    bytes[i] = binary_string.charCodeAt(i);
+    bytes[i] = binaryString.charCodeAt(i);
   }
   return bytes;
 }
