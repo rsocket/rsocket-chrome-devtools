@@ -8,6 +8,16 @@ RSockets allows for viewing RSocket frames sent over a WebSocket connection. Dat
 
 ![screenshot](./screenshot.png)
 
+## Install
+
+You can get install from the extension from the [Chrome Web Store](https://chrome.google.com/webstore/detail/rsocket-frame-inspector/nijdiakpmjaohioaelphnfdbdpbbgkhc). 
+
+Alternatively, the extension can be built from source and then installed manually. 
+
+```bash
+yarn install && yarn build
+```
+
 ## Contribute
 
 Contributions are always welcome!
