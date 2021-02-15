@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './reset.css';
-import App, {ChromeHandlers} from './viewer/App';
+import {App, AppStateStore, ChromeHandlers} from './viewer/App';
 
 const handlers: ChromeHandlers = {};
 
@@ -79,4 +79,6 @@ window.addEventListener("load", function () {
   startDebugging();
 });
 
-ReactDOM.render(<App handlers={handlers}/>, document.getElementById('root'));
+ReactDOM.render(
+  <App store={new AppStateStore(handlers)}/>,
+  document.getElementById('root'));

@@ -4,7 +4,7 @@ const CopyWebpackPlugin = require("copy-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 
 
-var fileExtensions = ["jpg", "jpeg", "png", "gif", "eot", "otf", "svg", "ttf", "woff", "woff2"];
+const fileExtensions = ["jpg", "jpeg", "png", "gif", "eot", "otf", "svg", "ttf", "woff", "woff2"];
 
 module.exports = {
   entry: {
@@ -33,21 +33,18 @@ module.exports = {
       },
       {
         test: /\.(jpg|png|svg)$/,
-        loader: 'url-loader',
-        options: {
-          limit: 25000,
-        },
+        loader: 'url-loader'
       },
       {
         exclude: /node_modules/,
         test: /\.tsx?$/,
         use: "ts-loader"
       },
-      {
-        test: new RegExp('\.(' + fileExtensions.join('|') + ')$'),
-        loader: "file-loader?name=[name].[ext]",
-        exclude: /node_modules/
-      },
+      // {
+      //   test: new RegExp('\.(' + fileExtensions.join('|') + ')$'),
+      //   loader: "file-loader?name=[name].[ext]",
+      //   exclude: /node_modules/
+      // },
       {
         test: /\.html$/,
         loader: "html-loader",
@@ -56,9 +53,9 @@ module.exports = {
     ]
   },
   plugins: [
-    new CleanWebpackPlugin({
-      dir: "dist"
-    }),
+    // new CleanWebpackPlugin({
+    //   dir: "dist"
+    // }),
     new CopyWebpackPlugin({
       patterns: [
         {

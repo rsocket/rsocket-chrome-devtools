@@ -16,6 +16,13 @@ import {
   Utf8Encoders
 } from "rsocket-core";
 import {Encoders} from "rsocket-core/RSocketEncoding";
+import Protocol from "devtools-protocol";
+import {action, makeObservable, observable} from "mobx";
+import {observer} from "mobx-react";
+import WebSocketFrameReceivedEvent = Protocol.Network.WebSocketFrameReceivedEvent;
+import WebSocketFrameSentEvent = Protocol.Network.WebSocketFrameSentEvent;
+import WebSocketFrame = Protocol.Network.WebSocketFrame;
+import WebSocketCreatedEvent = Protocol.Network.WebSocketCreatedEvent;
 
 function getRSocketType(type: number): string {
   for (const [name, code] of Object.entries(FRAME_TYPES)) {
@@ -77,7 +84,8 @@ function base64ToArrayBuffer(base64: string) {
   return bytes;
 }
 
-const FrameEntry = ({frame, selected, onClick}: { frame: WsFrame, selected: boolean, onClick: MouseEventHandler }) => {
+const FrameEntry = ({frame, selected, onClick}:
+                      { frame: WsFrameState, selected: boolean, onClick: MouseEventHandler }) => {
   const rsocketFrame = tryDeserializeFrame(frame.payload)
   const frameName = rsocketFrame
     ? <span className="name">{shortFrame(rsocketFrame)}</span>
@@ -170,32 +178,6 @@ class RSocketFrame extends React.Component<RSocketFrameProps, any> {
   }
 }
 
-class FrameList extends React.Component<any, any> {
-  render() {
-    const {frames, activeId, onSelect, onClear, onStart, onStop, ...props} = this.props;
-    return (
-      <Panel {...props} className="LeftPanel">
-        <div className="list-controls">
-          <FontAwesome className="list-button" name="ban" onClick={onClear} title="Clear"/>
-          <FontAwesome className="list-button" name="play" onClick={onStart} title="Start"/>
-          <FontAwesome className="list-button" name="stop" onClick={onStop} title="Stop"/>
-        </div>
-        <ul className="frame-list" onClick={() => onSelect(null)}>
-          {frames.map((frame: WsFrame) =>
-            <FrameEntry key={frame.id}
-                        frame={frame}
-                        selected={frame.id === activeId}
-                        onClick={e => {
-                          onSelect(frame.id);
-                          e.stopPropagation();
-                        }}
-            />)}
-        </ul>
-      </Panel>
-    );
-  }
-}
-
 const TextViewer = ({data}: { data: string | Uint8Array }) => (
   <div className="TextViewer tab-pane">
     {data}
@@ -261,8 +243,8 @@ const RSocketViewer = ({frame, data}: { frame: Frame, data: string }) => {
 };
 
 
-class FrameView extends React.Component<{ wsFrame: WsFrame }, { panel?: string }> {
-  constructor(props: { wsFrame: WsFrame }) {
+class FrameView extends React.Component<{ wsFrame: WsFrameState }, { panel?: string }> {
+  constructor(props: { wsFrame: WsFrameState }) {
     super(props);
     this.state = {panel: undefined};
   }
@@ -283,7 +265,7 @@ class FrameView extends React.Component<{ wsFrame: WsFrame }, { panel?: string }
   }
 }
 
-interface WsFrame {
+interface WsFrameState {
   id: number,
   type: 'incoming' | 'outgoing',
   time: Date,
@@ -293,98 +275,92 @@ interface WsFrame {
   payload: string,
 }
 
-/**
- * WebSocket message data. This represents an entire WebSocket message, not just a fragmented frame as the name suggests.
- */
-interface WebSocketFrame {
-  /** WebSocket message opcode. */
-  opcode: number,
-  /** WebSocket message mask. */
-  mask: boolean,
-  /**
-   * WebSocket message payload data. If the opcode is 1, this is a text message and payloadData is a UTF-8 string. If
-   * the opcode isn't 1, then payloadData is a base64 encoded string representing binary data.
-   */
-  payloadData: string,
-}
-
-interface AppState {
-  frames: WsFrame[];
-  capturing: boolean;
-  activeId?: number
+interface WsConnectionState {
+  id: string,
+  url?: string,
+  frames: WsFrameState[];
+  activeFrame?: number
 }
 
 export type ChromeHandlers = { [name: string]: any };
 
-export default class App extends React.Component<{ handlers: ChromeHandlers, }, AppState> {
+export class AppStateStore {
   _uniqueId = 0;
   issueTime?: number = undefined;
   issueWallTime?: number = undefined;
+  connections = new Map<string, WsConnectionState>();
+  activeConnection?: string = undefined;
 
-  state: AppState = {
-    frames: [],
-    activeId: undefined,
-    capturing: true,
+  constructor(handlers: ChromeHandlers) {
+    makeObservable(this, {
+      connections: observable,
+      activeConnection: observable,
+      selectConnection: action.bound,
+      frameSent: action.bound,
+      frameReceived: action.bound,
+      webSocketCreated: action.bound,
+      selectFrame: action.bound,
+      clearFrames: action.bound,
+    });
+
+    handlers["Network.webSocketCreated"] = this.webSocketCreated.bind(this);
+    handlers["Network.webSocketFrameReceived"] = this.frameReceived.bind(this);
+    handlers["Network.webSocketFrameSent"] = this.frameSent.bind(this);
   }
 
-  getTime(timestamp: number): Date {
-    if (this.issueTime === undefined || this.issueWallTime === undefined) {
-      this.issueTime = timestamp;
-      this.issueWallTime = new Date().getTime();
+  clearFrames() {
+    if (!this.activeConnection) {
+      return
     }
-    return new Date((timestamp - this.issueTime) * 1000 + this.issueWallTime);
+    const connection = this.connections.get(this.activeConnection);
+    if (!connection) {
+      return;
+    }
+    connection.frames = []
   }
 
-  constructor(props: { handlers: ChromeHandlers, }) {
-    super(props);
-
-    props.handlers["Network.webSocketFrameReceived"] = this.frameReceived.bind(this);
-    props.handlers["Network.webSocketFrameSent"] = this.frameSent.bind(this);
+  selectFrame(id?: number) {
+    if (!this.activeConnection) {
+      return
+    }
+    const connection = this.connections.get(this.activeConnection);
+    if (!connection) {
+      return;
+    }
+    connection.activeFrame = id;
   }
 
-  render() {
-    const {frames, activeId} = this.state;
-    const active = frames.find(f => f.id === activeId);
-    return (
-      <Panel cols className="App">
-        <FrameList
-          size={300}
-          minSize={180}
-          resizable
-          frames={frames}
-          activeId={activeId}
-          onClear={this.clearFrames}
-          onSelect={this.selectFrame}
-          onStart={this.startCapture}
-          onStop={this.stopCapture}
-        />
-        <Panel minSize={100} className="PanelView">
-          {active != null ? <FrameView wsFrame={active}/> :
-            <span className="message">Select a frame to view its contents</span>}
-        </Panel>
-      </Panel>
-    );
+  selectConnection(value: string) {
+    this.activeConnection = value;
   }
 
-  selectFrame = (id: number) => {
-    this.setState({activeId: id});
-  };
-
-  clearFrames = () => {
-    this.setState({frames: []});
-  };
-
-  startCapture = () => {
-    this.setState({capturing: true});
+  webSocketCreated(event: WebSocketCreatedEvent) {
+    const {requestId, url} = event;
+    if (this.connections.get(requestId)) {
+      // unexpected
+      return;
+    }
+    this.connections.set(requestId, {
+      id: requestId,
+      url: url,
+      frames: [],
+      activeFrame: undefined,
+    });
   }
 
-  stopCapture = () => {
-    this.setState({capturing: false});
+  frameReceived(event: WebSocketFrameReceivedEvent) {
+    const {requestId, timestamp, response} = event;
+    this.addFrame('incoming', requestId, timestamp, response);
   }
 
-  addFrame(type: 'incoming' | 'outgoing', timestamp: number, response: WebSocketFrame) {
+  frameSent(event: WebSocketFrameSentEvent) {
+    const {requestId, timestamp, response} = event;
+    this.addFrame('outgoing', requestId, timestamp, response);
+  }
+
+  addFrame(type: 'incoming' | 'outgoing', requestId: string, timestamp: number, response: WebSocketFrame) {
     if (response.opcode === 1 || response.opcode === 2) {
-      const frame: WsFrame = {
+      const frame: WsFrameState = {
         type,
         id: ++this._uniqueId,
         time: this.getTime(timestamp),
@@ -396,19 +372,80 @@ export default class App extends React.Component<{ handlers: ChromeHandlers, }, 
       } else {
         frame.binary = stringToBuffer(response.payloadData);
       }
-      this.setState(({frames}) => ({frames: [...frames, frame]}));
+      const connection = this.ensureConnection(requestId);
+      connection.frames.push(frame)
+      this.activeConnection = requestId;
     }
   }
 
-  frameReceived({timestamp, response}: { timestamp: number, response: WebSocketFrame }) {
-    if (this.state.capturing) {
-      this.addFrame('incoming', timestamp, response);
+  private ensureConnection(requestId: string): WsConnectionState {
+    const connection = this.connections.get(requestId);
+    if (connection) {
+      return connection;
     }
+    const newConnection = {
+      id: requestId,
+      frames: [],
+      activeFrame: undefined,
+    }
+    this.connections.set(requestId, newConnection);
+    return newConnection;
   }
 
-  frameSent({timestamp, response}: { timestamp: number, response: WebSocketFrame }) {
-    if (this.state.capturing) {
-      this.addFrame('outgoing', timestamp, response);
+  private getTime(timestamp: number): Date {
+    if (this.issueTime === undefined || this.issueWallTime === undefined) {
+      this.issueTime = timestamp;
+      this.issueWallTime = new Date().getTime();
     }
+    return new Date((timestamp - this.issueTime) * 1000 + this.issueWallTime);
   }
 }
+
+export const App = observer(({store}: { store: AppStateStore }) => {
+  const {connections, activeConnection} = store;
+  if (!activeConnection) {
+    return <div>No active WebSocket connections</div>
+  }
+  const connection = connections.get(activeConnection);
+  if (!connection) {
+    throw Error(`the active connection: "${activeConnection}" is missing`);
+  }
+  const {frames, activeFrame} = connection;
+  const active = frames.find(f => f.id === activeFrame);
+  return (
+    <Panel cols className="App">
+      <Panel size={300} minSize={180} resizable className="LeftPanel">
+        <div className="list-controls">
+          <FontAwesome className="list-button" name="ban" onClick={() => store.clearFrames()} title="Clear"/>
+          <select
+            style={{width: "100%"}}
+            value={activeConnection}
+            onChange={e => store.selectConnection(e.target.value)}
+          >
+            {[...connections.entries()]
+              .map(([id, connection]) =>
+                <option value={id} key={id}>
+                  {`${id}: ${connection.url ?? ''}`}
+                </option>)
+            }
+          </select>
+        </div>
+        <ul className="frame-list" onClick={() => store.selectFrame(undefined)}>
+          {frames.map((frame: WsFrameState) =>
+            <FrameEntry key={frame.id}
+                        frame={frame}
+                        selected={frame.id === activeFrame}
+                        onClick={e => {
+                          store.selectFrame(frame.id);
+                          e.stopPropagation();
+                        }}
+            />)}
+        </ul>
+      </Panel>
+      <Panel minSize={100} className="PanelView">
+        {active != null ? <FrameView wsFrame={active}/> :
+          <span className="message">Select a frame to view its contents</span>}
+      </Panel>
+    </Panel>
+  );
+});
