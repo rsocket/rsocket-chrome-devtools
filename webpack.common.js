@@ -40,11 +40,6 @@ module.exports = {
         test: /\.tsx?$/,
         use: "ts-loader"
       },
-      // {
-      //   test: new RegExp('\.(' + fileExtensions.join('|') + ')$'),
-      //   loader: "file-loader?name=[name].[ext]",
-      //   exclude: /node_modules/
-      // },
       {
         test: /\.html$/,
         loader: "html-loader",
@@ -53,9 +48,6 @@ module.exports = {
     ]
   },
   plugins: [
-    // new CleanWebpackPlugin({
-    //   dir: "dist"
-    // }),
     new CopyWebpackPlugin({
       patterns: [
         {
