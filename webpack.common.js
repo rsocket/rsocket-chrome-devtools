@@ -35,6 +35,12 @@ module.exports = {
         test: /\.(jpg|png|svg)$/,
         loader: 'url-loader'
       },
+      // loads the icon to the dist directory
+      {
+        test: new RegExp('\.(' + fileExtensions.join('|') + ')$'),
+        loader: "file-loader?name=[name].[ext]",
+        exclude: /node_modules/
+      },
       {
         exclude: /node_modules/,
         test: /\.tsx?$/,
