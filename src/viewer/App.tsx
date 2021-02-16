@@ -18,7 +18,7 @@ import {
 import {Encoders} from "rsocket-core/RSocketEncoding";
 import Protocol from "devtools-protocol";
 import {action, makeObservable, observable} from "mobx";
-import {observer} from "mobx-react";
+import {observer} from "mobx-react-lite";
 import WebSocketFrameReceivedEvent = Protocol.Network.WebSocketFrameReceivedEvent;
 import WebSocketFrameSentEvent = Protocol.Network.WebSocketFrameSentEvent;
 import WebSocketFrame = Protocol.Network.WebSocketFrame;
