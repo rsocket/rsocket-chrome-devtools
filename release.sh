@@ -29,7 +29,9 @@ main() {
   local next_version
   info "release version: ${current_version}, next version:"
   read next_version
-  yarn version --no-git-tag-version --new-version "${new_version}-SNAPSHOT"
+  yarn version --no-git-tag-version --new-version "${next_version}-SNAPSHOT"
+  git add package.json
+  git ci -m"${next_version}-SNAPSHOT"
 }
 
 main "$@"
