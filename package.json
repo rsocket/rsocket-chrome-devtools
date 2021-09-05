@@ -45,7 +45,7 @@
     "react-flex-panel": "^1.0.0",
     "react-fontawesome": "^1.7.1",
     "react-inspector": "^5.1.0",
-    "rsocket-core": "^0.0.22",
-    "rsocket-websocket-client": "^0.0.22"
+    "rsocket-core": "^0.0.27",
+    "rsocket-websocket-client": "^0.0.27"
   }
 }
