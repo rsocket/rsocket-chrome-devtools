@@ -38,6 +38,17 @@
     --incoming-frame-color: #ce5500;
   }
 }
+// TODO: is there a way not to duplicate?
+@media(prefers-color-scheme: light) {
+  :root {
+    --base-text-color: #222;
+    --grey-text-color: #888;
+    --ascii-view-color: #444;
+    --main-background-color: #f8f8f8;
+    --outgoing-frame-color: #f6ffd0;
+    --incoming-frame-color: #ffe6ca;
+  }
+}
 .App {
   font-family: 'Segoe UI', Tahoma, sans-serif;
   font-size: 12px;
