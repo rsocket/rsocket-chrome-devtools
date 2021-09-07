@@ -18,10 +18,6 @@ error() {
 main() {
   local current_version
   current_version=$(cat package.json | jq -r .version)
-  if [[ ! "${current_version}" =~ ^.*-SNAPSHOT$ ]]; then
-    error "pre-release version must be a snapshot"
-  fi
-  current_version=${current_version%-SNAPSHOT}
   info "releasing ${current_version}"
   yarn version --new-version "${current_version}"
   yarn clean
@@ -29,7 +25,7 @@ main() {
   local next_version
   info "release version: ${current_version}, next version:"
   read next_version
-  yarn version --no-git-tag-version --new-version "${next_version}-SNAPSHOT"
+  yarn version --no-git-tag-version --new-version "${next_version}"
   git add package.json
   git ci -m"${next_version}-SNAPSHOT"
 }
