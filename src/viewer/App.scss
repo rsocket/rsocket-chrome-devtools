@@ -19,10 +19,29 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
+.root {
+  --base-text-color: #222;
+  --grey-text-color: #888;
+  --ascii-view-color: #444;
+  --main-background-color: #f8f8f8;
+  --outgoing-frame-color: #f6ffd0;
+  --incoming-frame-color: #ffe6ca;
+  color-scheme: light dark;
+}
+@media(prefers-color-scheme: dark) {
+  :root {
+    --base-text-color: white;
+    --grey-text-color: #d6d6d6;
+    --ascii-view-color: #e0e0e0;
+    --main-background-color: #404040;
+    --outgoing-frame-color: #146500;
+    --incoming-frame-color: #ce5500;
+  }
+}
 .App {
   font-family: 'Segoe UI', Tahoma, sans-serif;
   font-size: 12px;
-  color: #222;
+  color: var(--base-text-color);
   overflow: hidden;
 }
 .LeftPanel {
@@ -34,7 +53,7 @@
     flex-shrink: 0;
     display: flex;
     flex-direction: row;
-    background-color: #f8f8f8;
+    background-color: var(--main-background-color);
     border-bottom: 1px solid #ddd;
     padding: 8px 8px 4px 8px;
     .list-filter {
@@ -52,11 +71,11 @@
     .list-button {
       flex-shrink: 0;
       font-size: 18px;
-      color: #888;
+      color: var(--grey-text-color);
       cursor: pointer;
       margin-right: 8px;
       &:hover {
-        color: #222;
+        color: var(--base-text-color);
       }
     }
   }
@@ -77,20 +96,20 @@
         margin-top: 3px;
       }
       &.frame-incoming {
-        background-color: rgb(255, 230, 202);
+        background-color: var(--incoming-frame-color);
         .fa {
           color: rgb(168, 104, 19);
         }
       }
       &.frame-outgoing {
-        background-color: rgb(246, 255, 208);
+        background-color: var(--outgoing-frame-color);
         .fa {
           color: rgb(98, 168, 19);
         }
       }
       .timestamp {
         margin: 0 6px 0 2px;
-        color: #888;
+        color: var(--grey-text-color);
         flex-shrink: 0;
       }
       .name {
@@ -115,7 +134,7 @@
           color: #ccc;
         }
         .length {
-          color: #888;
+          color: var(--grey-text-color);
         }
       }
     }
@@ -142,7 +161,7 @@
     padding: 4px 8px 0 8px;
     .tab-button {
       cursor: pointer;
-      background-color: #f8f8f8;
+      background-color: var(--main-background-color);
       display: inline-block;
       padding: 2px 12px;
       margin: 0 4px;
@@ -200,7 +219,7 @@
     display: inline-block;
   }
   .line-numbers {
-    color: #888;
+    color: var(--grey-text-color);
     margin-right: 8px;
   }
   .selected {
@@ -225,7 +244,7 @@
     }
   }
   .ascii-view {
-    color: #444;
+    color: var(--ascii-view-color);
     margin-left: 12px;
   }
 }
