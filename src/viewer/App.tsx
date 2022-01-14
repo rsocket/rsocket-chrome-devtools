@@ -1,7 +1,9 @@
-import React, {MouseEventHandler} from 'react';
+import React, {MouseEventHandler, CSSProperties} from 'react';
 // @ts-ignore no types for the package
 import Panel from 'react-flex-panel';
 import FontAwesome from 'react-fontawesome';
+import {FixedSizeList, ListChildComponentProps} from 'react-window';
+import AutoSizer from 'react-virtualized-auto-sizer';
 import classNames from 'classnames';
 import './App.scss';
 import {ObjectInspector} from 'react-inspector';
@@ -84,8 +86,8 @@ function base64ToArrayBuffer(base64: string) {
   return bytes;
 }
 
-const FrameEntry = ({frame, selected, onClick}:
-                      { frame: WsFrameState, selected: boolean, onClick: MouseEventHandler }) => {
+const FrameEntry = ({frame, selected, onClick, style}:
+                      { frame: WsFrameState, selected: boolean, onClick: MouseEventHandler, style: CSSProperties }) => {
   const rsocketFrame = tryDeserializeFrame(frame.payload)
   const frameName = rsocketFrame
     ? <span className="name">{shortFrame(rsocketFrame)}</span>
@@ -93,6 +95,7 @@ const FrameEntry = ({frame, selected, onClick}:
   return (
     <li
       className={classNames("frame", "frame-" + frame.type, {"frame-selected": selected})}
+      style={style}
       onClick={onClick}>
       <FontAwesome name={frame.type === "incoming" ? "arrow-circle-down" : "arrow-circle-up"}/>
       <TimeStamp time={frame.time}/>
@@ -412,6 +415,24 @@ export const App = observer(({store}: { store: AppStateStore }) => {
   }
   const {frames, activeFrame} = connection;
   const active = frames.find(f => f.id === activeFrame);
+
+  const Row = ({ index, style, data }: ListChildComponentProps) => {
+    const frame = data[index];
+
+    return (
+      <FrameEntry
+        key={frame.id}
+        style={style}
+        frame={frame}
+        selected={frame.id === activeFrame}
+        onClick={e => {
+          store.selectFrame(frame.id);
+          e.stopPropagation();
+        }}
+      />
+    );
+  };
+
   return (
     <Panel cols className="App">
       <Panel size={300} minSize={180} resizable className="LeftPanel">
@@ -430,17 +451,16 @@ export const App = observer(({store}: { store: AppStateStore }) => {
             }
           </select>
         </div>
-        <ul className="frame-list" onClick={() => store.selectFrame(undefined)}>
-          {frames.map((frame: WsFrameState) =>
-            <FrameEntry key={frame.id}
-                        frame={frame}
-                        selected={frame.id === activeFrame}
-                        onClick={e => {
-                          store.selectFrame(frame.id);
-                          e.stopPropagation();
-                        }}
-            />)}
-        </ul>
+
+        <div className="frame-list">
+          <AutoSizer disableWidth>
+            {({ height }) => (
+              <FixedSizeList height={height} width="100%" itemCount={frames.length} itemSize={18} innerElementType="ul">
+                {Row}
+              </FixedSizeList>
+            )}
+          </AutoSizer>
+        </div>
       </Panel>
       <Panel minSize={100} className="PanelView">
         {active != null ? <FrameView wsFrame={active}/> :

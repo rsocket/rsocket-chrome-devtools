@@ -17,6 +17,8 @@
     "@types/react-dom": "^16.9.10",
     "@types/react-fontawesome": "^1.6.4",
     "@types/react-inspector": "^4.0.1",
+    "@types/react-virtualized-auto-sizer": "^1.0.1",
+    "@types/react-window": "^1.8.5",
     "@types/rsocket-core": "^0.0.6",
     "@types/rsocket-types": "^0.0.2",
     "@types/rsocket-websocket-client": "^0.0.3",
@@ -45,6 +47,8 @@
     "react-flex-panel": "^1.0.0",
     "react-fontawesome": "^1.7.1",
     "react-inspector": "^5.1.0",
+    "react-virtualized-auto-sizer": "^1.0.6",
+    "react-window": "^1.8.6",
     "rsocket-core": "^0.0.27",
     "rsocket-websocket-client": "^0.0.27"
   }
