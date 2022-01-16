@@ -19,8 +19,9 @@ import {
 } from "rsocket-core";
 import {Encoders} from "rsocket-core/RSocketEncoding";
 import Protocol from "devtools-protocol";
-import {action, makeObservable, observable} from "mobx";
+import {action, makeObservable, observable, computed} from "mobx";
 import {observer} from "mobx-react-lite";
+import {Index, IndexSearchResult} from "flexsearch";
 import WebSocketFrameReceivedEvent = Protocol.Network.WebSocketFrameReceivedEvent;
 import WebSocketFrameSentEvent = Protocol.Network.WebSocketFrameSentEvent;
 import WebSocketFrame = Protocol.Network.WebSocketFrame;
@@ -282,6 +283,7 @@ interface WsConnectionState {
   id: string,
   url?: string,
   frames: WsFrameState[];
+  index: Index;
   activeFrame?: number
 }
 
@@ -293,12 +295,16 @@ export class AppStateStore {
   issueWallTime?: number = undefined;
   connections = new Map<string, WsConnectionState>();
   activeConnection?: string = undefined;
+  searchValue: string = "";
 
   constructor(handlers: ChromeHandlers) {
     makeObservable(this, {
       connections: observable,
       activeConnection: observable,
       selectConnection: action.bound,
+      search: action.bound,
+      searchValue: observable,
+      searchResult: computed,
       frameSent: action.bound,
       frameReceived: action.bound,
       webSocketCreated: action.bound,
@@ -320,6 +326,8 @@ export class AppStateStore {
       return;
     }
     connection.frames = []
+    connection.index = new Index({tokenize: "full"})
+    this.searchValue = ""
   }
 
   selectFrame(id?: number) {
@@ -337,6 +345,24 @@ export class AppStateStore {
     this.activeConnection = value;
   }
 
+  search(value: string) {
+    this.searchValue = value;
+  }
+
+  get searchResult(): IndexSearchResult {
+    if (!this.activeConnection) {
+      return []
+    }
+
+    const connection = this.connections.get(this.activeConnection);
+    if (!connection) {
+      return []
+    }
+
+    const result = connection.index.search(this.searchValue);
+    return result
+  }
+
   webSocketCreated(event: WebSocketCreatedEvent) {
     const {requestId, url} = event;
     if (this.connections.get(requestId)) {
@@ -347,6 +373,7 @@ export class AppStateStore {
       id: requestId,
       url: url,
       frames: [],
+      index: new Index({tokenize: "full"}),
       activeFrame: undefined,
     });
   }
@@ -376,7 +403,9 @@ export class AppStateStore {
         frame.binary = stringToBuffer(response.payloadData);
       }
       const connection = this.ensureConnection(requestId);
+      const rSocketFrame = tryDeserializeFrame(frame.payload);
       connection.frames.push(frame)
+      connection.index.add(frame.id, (rSocketFrame as any)?.data ?? frame.text ?? frame.payload)
       this.activeConnection = requestId;
     }
   }
@@ -389,6 +418,7 @@ export class AppStateStore {
     const newConnection = {
       id: requestId,
       frames: [],
+      index: new Index({tokenize: "full"}),
       activeFrame: undefined,
     }
     this.connections.set(requestId, newConnection);
@@ -405,7 +435,7 @@ export class AppStateStore {
 }
 
 export const App = observer(({store}: { store: AppStateStore }) => {
-  const {connections, activeConnection} = store;
+  const {connections, activeConnection, searchValue, searchResult} = store;
   if (!activeConnection) {
     return <div>No active WebSocket connections</div>
   }
@@ -415,9 +445,10 @@ export const App = observer(({store}: { store: AppStateStore }) => {
   }
   const {frames, activeFrame} = connection;
   const active = frames.find(f => f.id === activeFrame);
+  const filteredFrames = searchResult.length ? frames.filter((frame) => searchResult.includes(frame.id)) : frames;
 
-  const Row = ({ index, style, data }: ListChildComponentProps) => {
-    const frame = data[index];
+  const Row = ({ index, style }: ListChildComponentProps) => {
+    const frame = filteredFrames[index];
 
     return (
       <FrameEntry
@@ -450,12 +481,19 @@ export const App = observer(({store}: { store: AppStateStore }) => {
                 </option>)
             }
           </select>
+          <input
+            type="text"
+            placeholder="Search frame..."
+            style={{width: "100%"}}
+            value={searchValue}
+            onChange={e => store.search(e.target.value)}
+          />
         </div>
 
         <div className="frame-list">
           <AutoSizer disableWidth>
             {({ height }) => (
-              <FixedSizeList height={height} width="100%" itemCount={frames.length} itemSize={18} innerElementType="ul">
+              <FixedSizeList height={height} width="100%" itemCount={filteredFrames.length} itemSize={18} innerElementType="ul">
                 {Row}
               </FixedSizeList>
             )}
