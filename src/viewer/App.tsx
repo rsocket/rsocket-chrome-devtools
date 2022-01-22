@@ -484,7 +484,7 @@ export const App = observer(({store}: { store: AppStateStore }) => {
           <input
             type="text"
             placeholder="Search frame..."
-            style={{width: "100%"}}
+            style={{width: "100%", marginLeft: "8px", border: "1px solid black"}}
             value={searchValue}
             onChange={e => store.search(e.target.value)}
           />
