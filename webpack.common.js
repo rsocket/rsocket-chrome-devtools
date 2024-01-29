@@ -11,15 +11,11 @@ module.exports = {
     devtools: path.join(__dirname, "src/devtools.ts"),
     inspector: path.join(__dirname, "src/inspector.tsx"),
   },
-  output: {
-    path: path.join(__dirname, "dist"),
-    filename: "[name].js"
-  },
   module: {
     rules: [
       {
         test: /\.css$/,
-        loader: "style-loader!css-loader",
+        use: ["style-loader", "css-loader"],
         exclude: /node_modules/
       },
       {
@@ -38,8 +34,11 @@ module.exports = {
       // loads the icon to the dist directory
       {
         test: new RegExp('\.(' + fileExtensions.join('|') + ')$'),
-        loader: "file-loader?name=[name].[ext]",
-        exclude: /node_modules/
+        exclude: /node_modules/,
+        loader: "file-loader",
+        options: {
+          name: '[name].[ext]'
+        }
       },
       {
         exclude: /node_modules/,
@@ -58,13 +57,13 @@ module.exports = {
       patterns: [
         {
           from: "src/manifest.json",
-          transform: function (content, path) {
-            // generates the manifest file using the package.json informations
-            return Buffer.from(JSON.stringify({
+          transform: function (input, path) {
+            // generates the manifest file using the package.json information
+            return JSON.stringify({
               description: process.env.npm_package_description,
               version: process.env.npm_package_version,
-              ...JSON.parse(content.toString())
-            }));
+              ...JSON.parse(input.toString())
+            });
           }
         }
       ]
