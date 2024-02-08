@@ -113,8 +113,8 @@ interface RSocketFrameProps {
 }
 
 class RSocketFrame extends React.Component<RSocketFrameProps, any> {
-  private hexView: HTMLUListElement | null = null;
-  private asciiView: HTMLUListElement | null = null;
+  private hexView: HTMLDivElement | null = null;
+  private asciiView: HTMLDivElement | null = null;
 
   render() {
     const {frame, data, className, ...props} = this.props;
@@ -126,14 +126,15 @@ class RSocketFrame extends React.Component<RSocketFrameProps, any> {
     const dot = ".".charCodeAt(0);
     for (let pos = 0; pos < data.length; pos += 16) {
       const row = [...(data as any).subarray(pos, pos + 16)];
-      lineNumbers.push(<li key={pos}>{pos.toString(16).padStart(numDigits, '0')}:</li>);
-      hexView.push(<li key={pos}>
+      // Use <wbr> to add line breaks but keep ASCII text copyable (<wbr> are not included in copied text)
+      lineNumbers.push(<span key={pos}>{pos.toString(16).padStart(numDigits, '0')}:<wbr/></span>);
+      hexView.push(<span key={pos}>
         {row.map((byte: number, i) => <span key={i}>{byte.toString(16).padStart(2, '0')}</span>)}
         {row.length < 16 && [...Array(16 - row.length)].map((nil, i) => <span key={i}
                                                                               className="padding">{"  "}</span>)}
-      </li>);
-      asciiView.push(<li
-        key={pos}>{String.fromCharCode(...row.map(byte => byte >= 32 && byte <= 126 ? byte : dot))}</li>);
+        <wbr/></span>);
+      asciiView.push(<span
+          key={pos}>{String.fromCharCode(...row.map(byte => byte >= 32 && byte <= 126 ? byte : dot))}<wbr/></span>);
     }
     let jsonData: any;
     try {
@@ -167,15 +168,15 @@ class RSocketFrame extends React.Component<RSocketFrameProps, any> {
         {jsonField}
         <hr/>
         <div className={classNames(className, "RSocketFrame")} {...props}>
-          <ul className="line-numbers">
+          <div className="line-numbers">
             {lineNumbers}
-          </ul>
-          <ul className="hex-view" ref={node => this.hexView = node}>
+          </div>
+          <div className="hex-view" ref={node => this.hexView = node}>
             {hexView}
-          </ul>
-          <ul className="ascii-view" ref={node => this.asciiView = node}>
+          </div>
+          <div className="ascii-view" ref={node => this.asciiView = node}>
             {asciiView}
-          </ul>
+          </div>
         </div>
       </div>
     )

@@ -223,11 +223,12 @@
   font-family: 'Consolas', 'Courier', monospace;
   font-size: 16px;
   white-space: nowrap;
-  ul {
-    list-style-type: none;
+  div {
     margin: 0;
     padding: 0;
     display: inline-block;
+    // Align the line/hex/ascii block lines by forcing the text to break on <wbr>
+    width: min-content;
   }
   .line-numbers {
     color: var(--grey-text-color);
