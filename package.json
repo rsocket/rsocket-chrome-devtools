@@ -1,6 +1,6 @@
 {
   "name": "rsocket-chrome-devtools",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "RSocket Chrome Devtools",
   "scripts": {
     "clean": "rm -rf dist && rm -f dist.zip",
