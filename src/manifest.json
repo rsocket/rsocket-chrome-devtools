@@ -1,15 +1,17 @@
 {
-  "manifest_version": 2,
+  "manifest_version": 3,
   "name": "RSocket Frame Inspector",
   "permissions": [
     "debugger"
   ],
   "devtools_page": "devtools.html",
-  "browser_action": {
+  "action": {
     "default_icon": "icon-128.png"
   },
   "icons": {
     "128": "icon-128.png"
   },
-  "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'"
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
 }
